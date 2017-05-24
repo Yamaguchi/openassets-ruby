@@ -34,7 +34,7 @@ module OpenAssets
         metadata_length = Bitcoin::Protocol.pack_var_int(@metadata.length).unpack("H*")
         payload << sort_count(metadata_length[0])
         tmp = []
-        @metadata.bytes{|b| tmp << b.to_s(16)}
+        @metadata.bytes{|b| tmp << "%02x" % b}
         payload << tmp.join
         payload.join
       end
