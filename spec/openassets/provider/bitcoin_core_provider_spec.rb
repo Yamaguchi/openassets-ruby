@@ -49,8 +49,19 @@ describe OpenAssets::Provider::BitcoinCoreProvider do
       expect(provider).to receive(:post).with("https://user:password@localhost:8332", 60, 60, "{\"method\":\"listunspent\",\"params\":[1,9999999,[]],\"id\":\"jsonrpc\"}", {:content_type=>:json})
       provider.list_unspent
 
-      expect(provider).to receive(:request).with(:listunspent, 1, 9999999, [])
+      expect(provider).to receive(:request).with(:listunspent, 1, 9999999, [], wallet: nil)
       provider.list_unspent
+    end
+
+    it 'use list_unspent with multi wallet' do
+      expect(RestClient::Request).to receive(:execute).with(:method => :post, :url => "https://user:password@localhost:8332/wallet1.dat", :timeout => 60, :open_timeout => 60, :payload => "{\"method\":\"listunspent\",\"params\":[1,9999999,[]],\"id\":\"jsonrpc\"}", :headers => {:content_type=>:json})
+      provider.list_unspent([], 1, 9999999, "wallet1.dat")
+
+      expect(provider).to receive(:post).with("https://user:password@localhost:8332/wallet1.dat", 60, 60, "{\"method\":\"listunspent\",\"params\":[1,9999999,[]],\"id\":\"jsonrpc\"}", {:content_type=>:json})
+      provider.list_unspent([], 1, 9999999, "wallet1.dat")
+
+      expect(provider).to receive(:request).with(:listunspent, 1, 9999999, [], wallet: "wallet1.dat")
+      provider.list_unspent([], 1, 9999999, "wallet1.dat")
     end
 
     it 'use get_transaction' do

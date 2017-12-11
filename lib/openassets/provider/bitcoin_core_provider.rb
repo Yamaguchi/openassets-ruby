@@ -30,8 +30,8 @@ module OpenAssets
       # @param [Array] addresses If present, only outputs which pay an address in this array will be returned.
       # @param [Integer] min The minimum number of confirmations the transaction containing an output must have in order to be returned. Default is 1.
       # @param [Integer] max The maximum number of confirmations the transaction containing an output may have in order to be returned. Default is 9999999.
-      def list_unspent(addresses = [], min = 1 , max = 9999999)
-        listunspent(min, max, addresses)
+      def list_unspent(addresses = [], min = 1 , max = 9999999, wallet = nil)
+        listunspent(min, max, addresses, wallet: wallet)
       end
 
       # Get raw transaction.
@@ -90,7 +90,6 @@ module OpenAssets
         Bitcoin::Protocol::Tx.from_hash(hash)
       end
 
-      private
       def server_url
         url = "#{@config[:schema]}://"
         url.concat "#{@config[:user]}:#{@config[:password]}@"
@@ -98,13 +97,14 @@ module OpenAssets
         url
       end
 
-      def request(command, *params)
+      def request(command, *params, wallet: nil)
         data = {
           :method => command,
           :params => params,
           :id => 'jsonrpc'
         }
-        post(server_url, @config[:timeout], @config[:open_timeout], data.to_json, content_type: :json) do |respdata, request, result|
+        url = wallet ? server_url.concat("/#{wallet}") : server_url
+        post(url, @config[:timeout], @config[:open_timeout], data.to_json, content_type: :json) do |respdata, request, result|
           raise ApiError, result.message if !result.kind_of?(Net::HTTPSuccess) && respdata.empty?
           response = JSON.parse(respdata.gsub(/\\u([\da-fA-F]{4})/) { [$1].pack('H*').unpack('n*').pack('U*').encode('ISO-8859-1').force_encoding('UTF-8') })
           raise ApiError, response['error'] if response['error']
